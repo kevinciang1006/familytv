@@ -10,6 +10,7 @@ import type { Video } from '@/lib/types'
 import { CATEGORIES } from '@/lib/constants'
 import GridCard from '@/components/cards/GridCard'
 import CategoryBar from './CategoryBar'
+import PullToRefresh from '@/components/PullToRefresh'
 
 const PAGE_SIZE = 20
 
@@ -79,6 +80,7 @@ export default function HomeClient() {
   }, [displayCount, total])
 
   return (
+    <PullToRefresh onRefresh={() => load(profile?.id)}>
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4">
       {/* Search bar */}
       <form
@@ -144,5 +146,6 @@ export default function HomeClient() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   )
 }

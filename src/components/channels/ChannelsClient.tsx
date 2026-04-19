@@ -5,13 +5,22 @@ import { useRouter } from 'next/navigation'
 import { Tv2 } from 'lucide-react'
 import type { Video, Channel } from '@/lib/types'
 import { CATEGORIES } from '@/lib/constants'
-import { filterByChannel } from '@/lib/videos'
+import { filterByChannel, getChannels, getVideos } from '@/lib/videos'
+import PullToRefresh from '@/components/PullToRefresh'
 
 type Props = { channels: Channel[]; videos: Video[] }
 
-export default function ChannelsClient({ channels, videos }: Props) {
+export default function ChannelsClient({ channels: initialChannels, videos: initialVideos }: Props) {
   const router = useRouter()
+  const [channels, setChannels] = useState(initialChannels)
+  const [videos, setVideos] = useState(initialVideos)
   const [cat, setCat] = useState('all')
+
+  async function refresh() {
+    const [ch, vids] = await Promise.all([getChannels(), getVideos()])
+    setChannels(ch)
+    setVideos(vids)
+  }
 
   const visible = useMemo(() => {
     return channels.filter((ch) => {
@@ -26,6 +35,7 @@ export default function ChannelsClient({ channels, videos }: Props) {
   }, [channels])
 
   return (
+    <PullToRefresh onRefresh={refresh}>
     <div className="max-w-[1400px] mx-auto px-6 py-8">
       <h1 className="text-[28px] font-black text-ink mb-1" style={{ letterSpacing: '-0.03em' }}>
         Channels
@@ -125,5 +135,6 @@ export default function ChannelsClient({ channels, videos }: Props) {
         </div>
       )}
     </div>
+    </PullToRefresh>
   )
 }

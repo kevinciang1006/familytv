@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { getWatchHistory, getContinueWatching, type HistoryRow } from '@/lib/history'
 import GridCard from '@/components/cards/GridCard'
+import PullToRefresh from '@/components/PullToRefresh'
 import type { Video } from '@/lib/types'
 
 function timeLeft(progressSec: number, durationSec: number): string {
@@ -24,16 +25,16 @@ export default function HistoryPage() {
   const [allRows, setAllRows] = useState<HistoryRow[]>([])
   const [loading, setLoading] = useState(true)
 
+  async function load(id: string) {
+    const [c, a] = await Promise.all([getContinueWatching(id), getWatchHistory(id)])
+    setContinueRows(c)
+    setAllRows(a)
+    setLoading(false)
+  }
+
   useEffect(() => {
     if (!profile) return
-    Promise.all([
-      getContinueWatching(profile.id),
-      getWatchHistory(profile.id),
-    ]).then(([c, a]) => {
-      setContinueRows(c)
-      setAllRows(a)
-      setLoading(false)
-    })
+    load(profile.id)
   }, [profile?.id])
 
   if (loading) {
@@ -47,6 +48,7 @@ export default function HistoryPage() {
   const isEmpty = allRows.length === 0
 
   return (
+    <PullToRefresh onRefresh={() => profile ? load(profile.id) : Promise.resolve()}>
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
       <div className="flex items-center gap-3 mb-6">
         <h1 className="text-[24px] font-black text-ink" style={{ letterSpacing: '-0.02em' }}>
@@ -135,5 +137,6 @@ export default function HistoryPage() {
         </>
       )}
     </div>
+    </PullToRefresh>
   )
 }

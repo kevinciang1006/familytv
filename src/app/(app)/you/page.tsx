@@ -6,23 +6,12 @@ import { Shield, Clock } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { getProfiles } from '@/lib/profiles'
 import { getProfileStats } from '@/lib/history'
-import type { Profile, Accent, Density } from '@/lib/types'
-
-const ACCENTS: { value: Accent; color: string; label: string }[] = [
-  { value: 'red',    color: '#E7352C', label: 'Red'    },
-  { value: 'orange', color: '#F4A338', label: 'Orange' },
-  { value: 'purple', color: '#8B5CF6', label: 'Purple' },
-  { value: 'teal',   color: '#0D9488', label: 'Teal'   },
-]
+import type { Profile } from '@/lib/types'
 
 export default function YouPage() {
   const router = useRouter()
   const profile = useStore((s) => s.profile)
   const setProfile = useStore((s) => s.setProfile)
-  const density = useStore((s) => s.density)
-  const setDensity = useStore((s) => s.setDensity)
-  const accent = useStore((s) => s.accent)
-  const setAccent = useStore((s) => s.setAccent)
   const [stats, setStats] = useState<{ count: number; totalSeconds: number } | null>(null)
   const [profiles, setProfiles] = useState<Profile[]>([])
 
@@ -97,47 +86,6 @@ export default function YouPage() {
       {/* Settings */}
       <div className="rounded-2xl overflow-hidden mb-4" style={{ border: '1px solid var(--line)' }}>
         <div className="text-[13px] font-bold text-ink-3 uppercase tracking-wide px-4 pt-4 pb-2">Settings</div>
-
-        {/* Density */}
-        <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid var(--line)' }}>
-          <span className="text-[14px] font-semibold text-ink">Display</span>
-          <div className="flex rounded-full overflow-hidden" style={{ border: '1px solid var(--line)' }}>
-            {(['cozy', 'compact'] as Density[]).map((d) => (
-              <button
-                key={d}
-                onClick={() => setDensity(d)}
-                className="px-3 py-1 text-[12px] font-semibold capitalize transition-colors"
-                style={{
-                  background: density === d ? 'var(--ink)' : 'transparent',
-                  color: density === d ? 'white' : 'var(--ink-3)',
-                }}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Accent */}
-        <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid var(--line)' }}>
-          <span className="text-[14px] font-semibold text-ink">Accent</span>
-          <div className="flex gap-2">
-            {ACCENTS.map((a) => (
-              <button
-                key={a.value}
-                onClick={() => setAccent(a.value)}
-                className="w-7 h-7 rounded-full transition-transform"
-                style={{
-                  background: a.color,
-                  outline: accent === a.value ? `2px solid ${a.color}` : 'none',
-                  outlineOffset: 2,
-                  transform: accent === a.value ? 'scale(1.15)' : 'scale(1)',
-                }}
-                title={a.label}
-              />
-            ))}
-          </div>
-        </div>
 
         {/* Parental controls */}
         <button

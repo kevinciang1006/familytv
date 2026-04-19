@@ -157,7 +157,7 @@ export default function PlayerWithControls({ video }: Props) {
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0,
+            right: isLandscape ? 170 : 'clamp(20px, 40vw, 170px)',
             height: 56,
             // background: 'rgba(0,0,0,0.4)',
             display: 'flex',
@@ -214,7 +214,7 @@ export default function PlayerWithControls({ video }: Props) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            paddingRight: 18,
+            paddingRight: 12,
             zIndex: 10,
             pointerEvents: 'auto',
           }}
