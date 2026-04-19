@@ -1,26 +1,25 @@
 export type Video = {
   id: string
   youtube_id: string
+  channel_id: string
   title: string
   description: string | null
+  thumbnail_url: string | null
+  duration_seconds: number
+  duration_label: string
+  view_count: number
+  view_count_label: string
+  channel_title: string
   category: string
-  age_rating: string
-  is_featured: boolean
   is_kids: boolean
-  sort_order: number
-  source: 'manual' | 'channel'
-  channel_id: string | null
+  is_featured: boolean
+  is_short: boolean
   published_at: string | null
+  fetched_at: string
   created_at: string
-  // Enriched from YouTube API:
-  thumbnail_url?: string
-  duration?: string
-  view_count?: string
-  channel_title?: string
 }
 
 export type Channel = {
-  id: string
   channel_id: string
   name: string
   description: string | null

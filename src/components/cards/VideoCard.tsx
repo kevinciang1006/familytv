@@ -24,9 +24,9 @@ export default function VideoCard({ video, style = 'landscape', onClick }: Props
   const router = useRouter()
   const [hover, setHover] = useState(false)
   const isPoster = style === 'poster'
-  const idx = parseInt(video.id.replace(/\D/g, '')) || 0
+  const idx = video.id.charCodeAt(0) + video.id.charCodeAt(video.id.length - 1)
 
-  const isStriped = !video.thumbnail_url || video.thumbnail_url.startsWith('repeating-linear-gradient')
+  const isStriped = !video.thumbnail_url
   const catLabel = CATEGORIES.find((c) => c.id === video.category)?.label ?? video.category
 
   function handleClick() {
@@ -55,7 +55,7 @@ export default function VideoCard({ video, style = 'landscape', onClick }: Props
           <div className="w-full h-full" style={{ background: stripeBg(idx) }} />
         ) : (
           <img
-            src={video.thumbnail_url}
+            src={video.thumbnail_url!}
             alt={video.title}
             className="w-full h-full object-cover"
           />
@@ -78,7 +78,7 @@ export default function VideoCard({ video, style = 'landscape', onClick }: Props
           className="absolute bottom-2 right-2 text-[11px] font-bold text-white px-1.5 py-0.5 rounded"
           style={{ background: 'rgba(0,0,0,0.75)', fontFamily: 'var(--font-jetbrains)' }}
         >
-          {video.duration ?? '—'}
+          {video.duration_label || '—'}
         </span>
 
         {/* Hover previewing chip */}
@@ -119,12 +119,6 @@ export default function VideoCard({ video, style = 'landscape', onClick }: Props
         </div>
         <div className="text-[12px] text-ink-3 mt-0.5 flex items-center gap-1 truncate">
           <span className="truncate">{video.channel_title}</span>
-          {video.view_count && video.view_count !== '—' && (
-            <>
-              <span>·</span>
-              <span>{video.view_count} views</span>
-            </>
-          )}
         </div>
       </div>
     </div>

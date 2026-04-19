@@ -1,122 +1,107 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { useStore } from '@/lib/store'
-import type { Video, Channel } from '@/lib/types'
-import { CONTINUE_IDS } from '@/lib/constants'
-import { getVideosByCategory, getKidsVideos, getFeaturedVideo, getVideosByChannel } from '@/lib/videos'
-import Hero from './Hero'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { Loader2 } from 'lucide-react'
+import type { Video } from '@/lib/types'
+import { CATEGORIES } from '@/lib/constants'
+import { getSupabase, } from '@/lib/supabase'
+import GridCard from '@/components/cards/GridCard'
 import CategoryBar from './CategoryBar'
-import Row from './Row'
 
-type Props = { videos: Video[]; channels: Channel[]; quotaExceeded?: boolean }
+const PAGE_SIZE = 20
 
-export default function HomeClient({ videos, channels, quotaExceeded = false }: Props) {
+type Props = { initialVideos: Video[] }
+
+export default function HomeClient({ initialVideos }: Props) {
   const [cat, setCat] = useState('all')
-  const [showQuotaToast, setShowQuotaToast] = useState(false)
-
-  useEffect(() => {
-    if (quotaExceeded) setShowQuotaToast(true)
-  }, [quotaExceeded])
-  const kidsMode = useStore((s) => s.kidsMode)
-  const cardStyle = useStore((s) => s.cardStyle)
-
-  const base = useMemo(() => kidsMode ? getKidsVideos(videos) : videos, [videos, kidsMode])
+  const [videos, setVideos] = useState<Video[]>(initialVideos)
+  const [page, setPage] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(initialVideos.length === PAGE_SIZE)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const filtered = useMemo(
-    () => cat === 'all' ? base : getVideosByCategory(base, cat),
-    [base, cat]
+    () => cat === 'all' ? videos : videos.filter((v) => v.category === cat),
+    [videos, cat]
   )
 
-  const continueVideos = useMemo(() => {
-    return CONTINUE_IDS
-      .map((c) => base.find((v) => v.id === c.id))
-      .filter(Boolean) as Video[]
-  }, [base])
+  const fetchMore = useCallback(async (nextPage: number, category: string) => {
+    const supabase = getSupabase()
+    if (!supabase) return
 
-  const featured = getFeaturedVideo(videos)
+    setLoading(true)
+    const from = nextPage * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
 
-  const hasChannels = channels.length > 0
-  const hasVideos = base.length > 0
+    let query = supabase
+      .from('videos')
+      .select('*')
+      .eq('is_short', false)
+      .order('published_at', { ascending: false })
+      .range(from, to)
 
-  // Channel rows filtered by kidsMode + active category
-  const visibleChannels = useMemo(() => {
-    return channels.filter((ch) => {
-      if (kidsMode && !ch.is_kids) return false
-      if (cat !== 'all' && ch.category !== cat) return false
-      return true
-    })
-  }, [channels, kidsMode, cat])
+    if (category !== 'all') {
+      query = query.eq('category', category)
+    }
+
+    const { data } = await query
+    const newVideos = (data ?? []) as Video[]
+
+    setVideos((prev) => nextPage === 0 ? newVideos : [...prev, ...newVideos])
+    setHasMore(newVideos.length === PAGE_SIZE)
+    setLoading(false)
+  }, [])
+
+  // Reset when category changes
+  useEffect(() => {
+    setPage(0)
+    fetchMore(0, cat)
+  }, [cat, fetchMore])
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (!sentinelRef.current) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          const next = page + 1
+          setPage(next)
+          fetchMore(next, cat)
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [hasMore, loading, page, cat, fetchMore])
+
+  const isEmpty = !loading && filtered.length === 0
 
   return (
-    <div>
-      {showQuotaToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 toast-slide-in" style={{ width: 'min(480px, calc(100vw - 32px))' }}>
-          <div className="flex items-center gap-4 px-5 py-4 rounded-2xl" style={{ background: 'var(--ink)', color: 'white', boxShadow: 'var(--shadow-lg-val)' }}>
-            <div className="text-2xl flex-shrink-0">⚠️</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-bold">YouTube quota reached</div>
-              <div className="text-[13px] opacity-70">Showing pinned videos only. Channel feeds will reload tomorrow.</div>
-            </div>
-            <button
-              onClick={() => setShowQuotaToast(false)}
-              className="px-3 py-1.5 rounded-full text-[13px] font-semibold flex-shrink-0"
-              style={{ background: 'var(--accent)', color: 'white' }}
-            >
-              Got it
-            </button>
-          </div>
-        </div>
-      )}
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4">
+      <CategoryBar value={cat} onChange={setCat} />
 
-      {featured && <Hero video={featured} />}
-
-      {!hasVideos && !hasChannels && (
-        <div className="flex flex-col items-center justify-center py-24 gap-4 text-center px-6">
+      {isEmpty ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
           <div className="text-5xl">📺</div>
-          <h2 className="text-xl font-black text-ink">No content yet</h2>
-          <p className="text-ink-3 max-w-sm">
-            Add channels in your Supabase dashboard to get started, or pin individual videos in the <code className="text-accent">videos</code> table.
+          <h2 className="text-xl font-black text-ink">No videos yet</h2>
+          <p className="text-ink-3 max-w-sm text-[14px]">
+            Videos are loading… check back in a moment. If this persists, trigger a sync from the edge function.
           </p>
         </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-4">
+          {filtered.map((v) => (
+            <GridCard key={v.id} video={v} />
+          ))}
+        </div>
       )}
 
-      {hasVideos && (
-        <div className="pt-6">
-          <CategoryBar value={cat} onChange={setCat} kidsMode={kidsMode} />
-
-          <div className="pt-4">
-            {cat === 'all' && continueVideos.length > 0 && (
-              <Row
-                title="Keep watching"
-                videos={continueVideos}
-                isContinue
-                subLabel="picks up right where you left off"
-              />
-            )}
-
-            <Row
-              title={kidsMode ? 'Popular with kids' : 'Trending with families'}
-              videos={filtered.slice(0, 10)}
-              cardStyle={cardStyle}
-            />
-
-            {/* Dynamic channel rows */}
-            {visibleChannels.map((ch) => {
-              const chVideos = getVideosByChannel(base, ch.channel_id).slice(0, 10)
-              if (chVideos.length === 0) return null
-              return (
-                <Row
-                  key={ch.channel_id}
-                  title={`From ${ch.name}`}
-                  videos={chVideos}
-                  cardStyle={cardStyle}
-                  channelHref={`https://youtube.com/channel/${ch.channel_id}`}
-                  channelAvatar={ch.thumbnail_url ?? undefined}
-                />
-              )
-            })}
-          </div>
+      {/* Sentinel + spinner */}
+      <div ref={sentinelRef} className="h-4" />
+      {loading && (
+        <div className="flex justify-center py-6">
+          <Loader2 size={24} className="animate-spin" style={{ color: 'var(--ink-4)' }} />
         </div>
       )}
     </div>

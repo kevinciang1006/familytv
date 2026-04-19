@@ -1,9 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { useRouter } from 'next/navigation'
-import { useStore } from '@/lib/store'
+import { useSearchParams, useRouter } from 'next/navigation'
 import type { Video } from '@/lib/types'
 import { CATEGORIES, PALETTES } from '@/lib/constants'
 import CategoryBar from '@/components/home/CategoryBar'
@@ -14,22 +12,20 @@ const SUGGESTIONS = ['cartoons for toddlers', 'bedtime stories', 'learning color
 
 function stripeBg(seed: number): string {
   const palette = PALETTES[seed % PALETTES.length]
-  const [a, b] = palette
   const angle = 30 + (seed * 17) % 60
-  return `repeating-linear-gradient(${angle}deg, ${a} 0 18px, ${b} 18px 36px)`
+  return `repeating-linear-gradient(${angle}deg, ${palette[0]} 0 18px, ${palette[1]} 18px 36px)`
 }
 
 export default function SearchClient({ videos }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const kidsMode = useStore((s) => s.kidsMode)
   const initialQ = searchParams.get('q') ?? ''
   const [query, setQuery] = useState(initialQ)
   const [cat, setCat] = useState('all')
   const [sort, setSort] = useState('relevance')
 
   const results = useMemo(() => {
-    let list = kidsMode ? videos.filter((v) => v.is_kids) : videos
+    let list = videos
     if (query.trim()) {
       const q = query.toLowerCase()
       list = list.filter(
@@ -37,19 +33,15 @@ export default function SearchClient({ videos }: Props) {
           v.title.toLowerCase().includes(q) ||
           v.category.toLowerCase().includes(q) ||
           v.description?.toLowerCase().includes(q) ||
-          v.channel_title?.toLowerCase().includes(q)
+          v.channel_title.toLowerCase().includes(q)
       )
     }
     if (cat !== 'all') list = list.filter((v) => v.category === cat)
     if (sort === 'views') {
-      list = [...list].sort((a, b) => {
-        const pa = parseFloat((a.view_count ?? '0').replace(/[KM]/g, (m) => m === 'K' ? '000' : '000000'))
-        const pb = parseFloat((b.view_count ?? '0').replace(/[KM]/g, (m) => m === 'K' ? '000' : '000000'))
-        return pb - pa
-      })
+      list = [...list].sort((a, b) => b.view_count - a.view_count)
     }
     return list
-  }, [videos, query, cat, sort, kidsMode])
+  }, [videos, query, cat, sort])
 
   const catLabel = (id: string) => CATEGORIES.find((c) => c.id === id)?.label ?? id
 
@@ -89,7 +81,7 @@ export default function SearchClient({ videos }: Props) {
       )}
 
       <div className="flex items-center gap-4 mb-6 flex-wrap">
-        <CategoryBar value={cat} onChange={setCat} kidsMode={kidsMode} />
+        <CategoryBar value={cat} onChange={setCat} />
         <div className="flex items-center gap-2 text-[13px] text-ink-3 flex-shrink-0">
           <label className="font-semibold">Sort by</label>
           <select
@@ -106,8 +98,8 @@ export default function SearchClient({ videos }: Props) {
 
       <div className="flex flex-col gap-3">
         {results.map((v) => {
-          const idx = parseInt(v.id.replace(/\D/g, '')) || 0
-          const isStriped = !v.thumbnail_url || v.thumbnail_url.startsWith('repeating-linear-gradient')
+          const seed = v.id.charCodeAt(0) + v.id.charCodeAt(v.id.length - 1)
+          const isStriped = !v.thumbnail_url
           return (
             <div
               key={v.id}
@@ -119,34 +111,32 @@ export default function SearchClient({ videos }: Props) {
                 style={{ width: 200, aspectRatio: '16/9' }}
               >
                 {isStriped ? (
-                  <div className="w-full h-full" style={{ background: stripeBg(idx) }} />
+                  <div className="w-full h-full" style={{ background: stripeBg(seed) }} />
                 ) : (
-                  <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover" />
+                  <img src={v.thumbnail_url!} alt={v.title} className="w-full h-full object-cover" />
                 )}
               </div>
               <div className="flex-1 min-w-0 py-1">
                 <div className="text-[15px] font-extrabold text-ink mb-1 truncate">{v.title}</div>
                 <div className="text-[13px] text-ink-3 mb-2">
                   {v.channel_title}
-                  {v.view_count && v.view_count !== '—' && ` · ${v.view_count} views`}
-                  {v.duration && ` · ${v.duration}`}
+                  {v.view_count_label && ` · ${v.view_count_label} views`}
+                  {v.duration_label && ` · ${v.duration_label}`}
                 </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'var(--surface-2)', color: 'var(--ink-3)' }}>
-                    Ages {v.age_rating}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: 'var(--accent-soft)', color: 'var(--accent-ink)' }}>
-                    {catLabel(v.category)}
-                  </span>
-                </div>
+                <span
+                  className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold"
+                  style={{ background: 'var(--accent-soft)', color: 'var(--accent-ink)' }}
+                >
+                  {catLabel(v.category)}
+                </span>
                 {v.description && (
-                  <p className="text-[13px] text-ink-3 truncate">{v.description}</p>
+                  <p className="text-[13px] text-ink-3 truncate mt-1">{v.description}</p>
                 )}
               </div>
             </div>
           )
         })}
-        {results.length === 0 && (
+        {results.length === 0 && query.trim() && (
           <div className="text-center py-16 text-ink-3 text-[15px]">Nothing matches that. Try another word!</div>
         )}
       </div>

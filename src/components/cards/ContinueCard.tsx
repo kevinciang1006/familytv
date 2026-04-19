@@ -21,10 +21,10 @@ function stripeBg(seed: number): string {
 export default function ContinueCard({ video, progress }: Props) {
   const router = useRouter()
   const [hover, setHover] = useState(false)
-  const idx = parseInt(video.id.replace(/\D/g, '')) || 0
+  const idx = video.id.charCodeAt(0) + video.id.charCodeAt(video.id.length - 1)
   const pct = Math.round(progress * 100)
 
-  const isStriped = !video.thumbnail_url || video.thumbnail_url.startsWith('repeating-linear-gradient')
+  const isStriped = !video.thumbnail_url
 
   return (
     <div
@@ -46,7 +46,7 @@ export default function ContinueCard({ video, progress }: Props) {
         {isStriped ? (
           <div className="w-full h-full" style={{ background: stripeBg(idx) }} />
         ) : (
-          <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+          <img src={video.thumbnail_url!} alt={video.title} className="w-full h-full object-cover" />
         )}
 
         <div
@@ -67,7 +67,7 @@ export default function ContinueCard({ video, progress }: Props) {
           className="absolute bottom-6 right-2 text-[11px] font-bold text-white px-1.5 py-0.5 rounded"
           style={{ background: 'rgba(0,0,0,0.75)', fontFamily: 'var(--font-jetbrains)' }}
         >
-          {video.duration ?? '—'}
+          {video.duration_label || '—'}
         </span>
 
         {/* Progress bar */}
@@ -92,7 +92,7 @@ export default function ContinueCard({ video, progress }: Props) {
           {video.title}
         </div>
         <div className="text-[12px] text-ink-3 mt-0.5">
-          {pct}% watched · {video.duration ?? '—'}
+          {pct}% watched · {video.duration_label || '—'}
         </div>
       </div>
     </div>

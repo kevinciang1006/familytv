@@ -25,10 +25,7 @@ export default function KidsClient({ videos }: Props) {
   }
 
   const byCat = (cat: string) => videos.filter((v) => v.category === cat)
-  const short = videos.filter((v) => {
-    const d = v.duration ?? ''
-    return !d.includes('h') && (parseInt(d.split(':')[0]) < 15 || d.length === 0)
-  })
+  const short = videos.filter((v) => v.duration_seconds < 900)
 
   return (
     <div>

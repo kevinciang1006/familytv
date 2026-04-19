@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ExternalLink, Tv2 } from 'lucide-react'
+import { Tv2 } from 'lucide-react'
 import type { Video, Channel } from '@/lib/types'
 import { useStore } from '@/lib/store'
 import { CATEGORIES } from '@/lib/constants'
-import { getVideosByChannel } from '@/lib/videos'
+import { filterByChannel } from '@/lib/videos'
 
 type Props = { channels: Channel[]; videos: Video[] }
 
@@ -58,7 +58,7 @@ export default function ChannelsClient({ channels, videos }: Props) {
       ) : (
         <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {visible.map((ch) => {
-            const chVideos = getVideosByChannel(videos, ch.channel_id)
+            const chVideos = filterByChannel(videos, ch.channel_id)
             const catLabel = CATEGORIES.find((c) => c.id === ch.category)?.label ?? ch.category
             return (
               <div
@@ -112,20 +112,12 @@ export default function ChannelsClient({ channels, videos }: Props) {
 
                 {/* Footer */}
                 <div
-                  className="mt-auto flex items-center justify-between px-5 py-3"
+                  className="mt-auto flex items-center px-5 py-3"
                   style={{ borderTop: '1px solid var(--line)' }}
                 >
                   <span className="text-[12px] text-ink-3">
                     {chVideos.length} video{chVideos.length !== 1 ? 's' : ''}
                   </span>
-                  <a
-                    href={`https://www.youtube.com/channel/${ch.channel_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[12px] font-semibold text-ink-3 hover:text-accent transition-colors"
-                  >
-                    View on YouTube <ExternalLink size={11} />
-                  </a>
                 </div>
               </div>
             )
