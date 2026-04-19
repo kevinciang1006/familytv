@@ -37,7 +37,7 @@ function Panel({ title, sub, children }: { title: string; sub?: string; children
 export default function ParentalClient() {
   const [maxAge, setMaxAge] = useState(8)
   const [hours, setHours] = useState(2)
-  const [autoplay, setAutoplay] = useState(false)
+  const [autoplay, setAutoplay] = useState(true)
   const [safeSearch, setSafeSearch] = useState(true)
   const [requirePin, setRequirePin] = useState(true)
   const [pin, setPin] = useState(['', '', '', ''])

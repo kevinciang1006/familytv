@@ -2,11 +2,19 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Profile, Density, CardStyle, Accent } from './types'
+import type { Profile, Density, CardStyle, Accent, Video } from './types'
 
 type AppStore = {
   profile: Profile | null
   setProfile: (p: Profile | null) => void
+
+  videoDialogOpen: boolean
+  activeVideo: Video | null
+  openVideo: (video: Video) => void
+  closeVideo: () => void
+
+  isCSSRotated: boolean
+  setIsCSSRotated: (v: boolean) => void
 
   currentVideoId: string | null
   setCurrentVideoId: (id: string | null) => void
@@ -41,6 +49,14 @@ export const useStore = create<AppStore>()(
       profile: null,
       setProfile: (p) =>
         set({ profile: p, kidsMode: p?.is_kids ?? false, sessionSec: 0 }),
+
+      videoDialogOpen: false,
+      activeVideo: null,
+      openVideo: (video) => set({ videoDialogOpen: true, activeVideo: video }),
+      closeVideo: () => set({ videoDialogOpen: false, activeVideo: null, isCSSRotated: false }),
+
+      isCSSRotated: false,
+      setIsCSSRotated: (v) => set({ isCSSRotated: v }),
 
       currentVideoId: null,
       setCurrentVideoId: (id) => set({ currentVideoId: id }),

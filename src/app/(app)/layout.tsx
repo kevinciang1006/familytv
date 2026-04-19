@@ -6,6 +6,7 @@ import { useStore } from '@/lib/store'
 import BottomNav from '@/components/nav/BottomNav'
 import ReminderToast from '@/components/screentime/ReminderToast'
 import LimitOverlay from '@/components/screentime/LimitOverlay'
+import VideoDialog from '@/components/player/VideoDialog'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -28,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {!isWatch && <BottomNav />}
       <ReminderToast />
       <LimitOverlay />
+      <VideoDialog />
     </div>
   )
 }

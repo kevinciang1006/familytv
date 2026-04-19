@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Play } from 'lucide-react'
 import type { Video } from '@/lib/types'
 import { PALETTES } from '@/lib/constants'
+import { useStore } from '@/lib/store'
 
 type Props = {
   video: Video
@@ -19,7 +19,7 @@ function stripeBg(seed: number): string {
 }
 
 export default function ContinueCard({ video, progress }: Props) {
-  const router = useRouter()
+  const openVideo = useStore((s) => s.openVideo)
   const [hover, setHover] = useState(false)
   const idx = video.id.charCodeAt(0) + video.id.charCodeAt(video.id.length - 1)
   const pct = Math.round(progress * 100)
@@ -32,7 +32,7 @@ export default function ContinueCard({ video, progress }: Props) {
       style={{ width: 'var(--card-w)' }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      onClick={() => router.push(`/watch/${video.youtube_id}`)}
+      onClick={() => openVideo(video)}
     >
       <div
         className="relative overflow-hidden rounded-[var(--radius)]"

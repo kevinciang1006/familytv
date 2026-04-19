@@ -19,6 +19,7 @@ function timeLeft(progressSec: number, durationSec: number): string {
 export default function HistoryPage() {
   const router = useRouter()
   const profile = useStore((s) => s.profile)
+  const openVideo = useStore((s) => s.openVideo)
   const [continueRows, setContinueRows] = useState<HistoryRow[]>([])
   const [allRows, setAllRows] = useState<HistoryRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,7 +84,7 @@ export default function HistoryPage() {
                       key={row.youtube_id}
                       className="flex-shrink-0 cursor-pointer"
                       style={{ width: 220 }}
-                      onClick={() => router.push(`/watch/${row.youtube_id}`)}
+                      onClick={() => row.videos && openVideo(row.videos as Video)}
                     >
                       <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
                         {row.videos.thumbnail_url ? (

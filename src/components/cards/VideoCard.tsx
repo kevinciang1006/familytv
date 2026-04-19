@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Play } from 'lucide-react'
 import type { Video } from '@/lib/types'
-import { PALETTES } from '@/lib/constants'
-import { CATEGORIES } from '@/lib/constants'
+import { PALETTES, CATEGORIES } from '@/lib/constants'
+import { useStore } from '@/lib/store'
 
 type Props = {
   video: Video
@@ -21,7 +20,7 @@ function stripeBg(seed: number): string {
 }
 
 export default function VideoCard({ video, style = 'landscape', onClick }: Props) {
-  const router = useRouter()
+  const openVideo = useStore((s) => s.openVideo)
   const [hover, setHover] = useState(false)
   const isPoster = style === 'poster'
   const idx = video.id.charCodeAt(0) + video.id.charCodeAt(video.id.length - 1)
@@ -31,7 +30,7 @@ export default function VideoCard({ video, style = 'landscape', onClick }: Props
 
   function handleClick() {
     if (onClick) { onClick(); return }
-    router.push(`/watch/${video.youtube_id}`)
+    openVideo(video)
   }
 
   return (

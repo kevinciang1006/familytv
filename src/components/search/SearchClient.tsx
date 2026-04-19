@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import type { Video } from '@/lib/types'
 import { CATEGORIES, PALETTES } from '@/lib/constants'
 import CategoryBar from '@/components/home/CategoryBar'
+import { useStore } from '@/lib/store'
 
 type Props = { videos: Video[] }
 
@@ -19,6 +20,7 @@ function stripeBg(seed: number): string {
 export default function SearchClient({ videos }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const openVideo = useStore((s) => s.openVideo)
   const initialQ = searchParams.get('q') ?? ''
   const [query, setQuery] = useState(initialQ)
   const [cat, setCat] = useState('all')
@@ -104,7 +106,7 @@ export default function SearchClient({ videos }: Props) {
             <div
               key={v.id}
               className="flex gap-4 p-3 rounded-[var(--radius)] cursor-pointer transition-colors hover:bg-surface-2"
-              onClick={() => router.push(`/watch/${v.youtube_id}`)}
+              onClick={() => openVideo(v)}
             >
               <div
                 className="flex-shrink-0 rounded-[var(--radius)] overflow-hidden"

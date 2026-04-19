@@ -1,8 +1,8 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import type { Video } from '@/lib/types'
 import { PALETTES } from '@/lib/constants'
+import { useStore } from '@/lib/store'
 
 function stripeBg(seed: number): string {
   const palette = PALETTES[seed % PALETTES.length]
@@ -11,14 +11,14 @@ function stripeBg(seed: number): string {
 }
 
 export default function GridCard({ video }: { video: Video }) {
-  const router = useRouter()
+  const openVideo = useStore((s) => s.openVideo)
   const seed = video.id.charCodeAt(0) + video.id.charCodeAt(video.id.length - 1)
   const isStriped = !video.thumbnail_url
 
   return (
     <div
       className="cursor-pointer group"
-      onClick={() => router.push(`/watch/${video.youtube_id}`)}
+      onClick={() => openVideo(video)}
     >
       {/* Thumbnail */}
       <div

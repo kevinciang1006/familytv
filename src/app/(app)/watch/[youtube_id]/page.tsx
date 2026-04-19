@@ -1,12 +1,22 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { useStore } from '@/lib/store'
 import { getVideo } from '@/lib/videos'
-import WatchClient from '@/components/watch/WatchClient'
-import { notFound } from 'next/navigation'
 
-type Props = { params: Promise<{ youtube_id: string }> }
+export default function WatchPage() {
+  const params = useParams()
+  const router = useRouter()
+  const openVideo = useStore((s) => s.openVideo)
 
-export default async function WatchPage({ params }: Props) {
-  const { youtube_id } = await params
-  const video = await getVideo(youtube_id)
-  if (!video) notFound()
-  return <WatchClient video={video} />
+  useEffect(() => {
+    const youtubeId = params.youtube_id as string
+    getVideo(youtubeId).then((video) => {
+      router.replace('/home')
+      if (video) openVideo(video)
+    })
+  }, [])
+
+  return null
 }
