@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { X, RotateCcw } from 'lucide-react'
+import { X, RotateCcw, Maximize2 } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { upsertWatchHistory } from '@/lib/history'
 import type { Video } from '@/lib/types'
@@ -104,6 +104,7 @@ export default function PlayerWithControls({ video }: Props) {
     `&color=white`,
     `&enablejsapi=1`,
     `&origin=${origin}`,
+    `&autoplay=1`,
   ].join('')
 
   const containerStyle: React.CSSProperties = isCSSRotated
@@ -138,8 +139,7 @@ export default function PlayerWithControls({ video }: Props) {
           id={`yt-dialog-${video.youtube_id}`}
           src={embedUrl}
           title={video.title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-          allowFullScreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           style={{
             position: 'absolute',
             inset: 0,
@@ -159,7 +159,7 @@ export default function PlayerWithControls({ video }: Props) {
             left: 0,
             right: 0,
             height: 56,
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)',
+            background: 'rgba(0,0,0,0.4)',
             display: 'flex',
             alignItems: 'center',
             paddingLeft: 12,
@@ -209,12 +209,12 @@ export default function PlayerWithControls({ video }: Props) {
             bottom: 0,
             left: 0,
             right: 0,
-            height: 36,
-            background: 'linear-gradient(to top, rgba(0,0,0,0.65), transparent)',
+            height: isLandscape ? 56 : 36,
+            background: 'rgba(0,0,0,0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            paddingRight: 12,
+            paddingRight: 18,
             zIndex: 10,
             pointerEvents: 'auto',
           }}
@@ -224,8 +224,9 @@ export default function PlayerWithControls({ video }: Props) {
               onClick={() => setIsCSSRotated((r) => !r)}
               title={isCSSRotated ? 'Exit landscape' : 'Landscape mode'}
               style={{
-                width: 36,
-                height: 36,
+                width: 28,
+                height: 28,
+                padding: 2,
                 borderRadius: '50%',
                 background: 'rgba(0,0,0,0.5)',
                 border: 'none',
@@ -236,10 +237,23 @@ export default function PlayerWithControls({ video }: Props) {
                 color: 'white',
               }}
             >
-              <RotateCcw size={18} />
+              <Maximize2 size={18} />
             </button>
           )}
         </div>
+
+        {/* Fullscreen button blocker — YouTube always renders it regardless of allowFullScreen */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: isLandscape? 84: 48,
+            right: isLandscape ? 12 : 8,
+            width: 52,
+            height: 52,
+            zIndex: 10,
+            pointerEvents: 'auto',
+          }}
+        />
       </div>
 
       {/* Video info (portrait only) */}
