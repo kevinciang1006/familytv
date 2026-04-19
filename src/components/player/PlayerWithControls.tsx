@@ -159,7 +159,7 @@ export default function PlayerWithControls({ video }: Props) {
             left: 0,
             right: 0,
             height: 56,
-            background: 'rgba(0,0,0,0.4)',
+            // background: 'rgba(0,0,0,0.4)',
             display: 'flex',
             alignItems: 'center',
             paddingLeft: 12,
@@ -209,8 +209,8 @@ export default function PlayerWithControls({ video }: Props) {
             bottom: 0,
             left: 0,
             right: 0,
-            height: isLandscape ? 56 : 36,
-            background: 'rgba(0,0,0,0.4)',
+            height: isLandscape ? 56 : 'clamp(36px, 92vw, 56px)',
+            // background: 'rgba(0,0,0,0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
@@ -224,9 +224,8 @@ export default function PlayerWithControls({ video }: Props) {
               onClick={() => setIsCSSRotated((r) => !r)}
               title={isCSSRotated ? 'Exit landscape' : 'Landscape mode'}
               style={{
-                width: 28,
-                height: 28,
-                padding: 2,
+                width: 36,
+                height: 36,
                 borderRadius: '50%',
                 background: 'rgba(0,0,0,0.5)',
                 border: 'none',
@@ -246,18 +245,19 @@ export default function PlayerWithControls({ video }: Props) {
         <div
           style={{
             position: 'absolute',
-            bottom: isLandscape? 84: 48,
-            right: isLandscape ? 12 : 8,
-            width: 52,
-            height: 52,
+            bottom: isLandscape ? 84 : 'clamp(44px, 24vw, 90px)',
+            right: isLandscape ? 12 : 'clamp(2px, 8vw, 28px)',
+            width: isLandscape ? 52 : 'clamp(28px, 12vw, 36px)',
+            height: isLandscape ? 52 : 'clamp(28px, 12vw, 36px)',
             zIndex: 10,
             pointerEvents: 'auto',
+            // background: 'rgba(252, 134, 134, 0.4)',
           }}
         />
       </div>
 
       {/* Video info (portrait only) */}
-      {!isLandscape && (
+      {/* {!isLandscape && (
         <div
           style={{
             width: '100%',
@@ -284,7 +284,7 @@ export default function PlayerWithControls({ video }: Props) {
             {video.channel_title}
           </p>
         </div>
-      )}
+      )} */}
     </div>
   )
 }
