@@ -3,7 +3,7 @@ import { getVideos } from '@/lib/videos'
 import SearchClient from '@/components/search/SearchClient'
 
 export default async function SearchPage() {
-  const videos = await getVideos(0, 200)
+  const videos = await getVideos()
   return (
     <Suspense>
       <SearchClient videos={videos} />

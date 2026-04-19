@@ -1,87 +1,112 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
-import { Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { Search, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useStore } from '@/lib/store'
+import { getVideos } from '@/lib/videos'
+import { getWatchedIds } from '@/lib/history'
 import type { Video } from '@/lib/types'
 import { CATEGORIES } from '@/lib/constants'
-import { getSupabase, } from '@/lib/supabase'
 import GridCard from '@/components/cards/GridCard'
 import CategoryBar from './CategoryBar'
 
 const PAGE_SIZE = 20
 
-type Props = { initialVideos: Video[] }
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
-export default function HomeClient({ initialVideos }: Props) {
+export default function HomeClient() {
+  const router = useRouter()
+  const profile = useStore((s) => s.profile)
   const [cat, setCat] = useState('all')
-  const [videos, setVideos] = useState<Video[]>(initialVideos)
-  const [page, setPage] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(initialVideos.length === PAGE_SIZE)
+  const [query, setQuery] = useState('')
+  const [allVideos, setAllVideos] = useState<Video[]>([])
+  const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set())
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE)
+  const [loading, setLoading] = useState(true)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const filtered = useMemo(
-    () => cat === 'all' ? videos : videos.filter((v) => v.category === cat),
-    [videos, cat]
-  )
-
-  const fetchMore = useCallback(async (nextPage: number, category: string) => {
-    const supabase = getSupabase()
-    if (!supabase) return
-
+  const load = useCallback(async (profileId: string | undefined) => {
     setLoading(true)
-    const from = nextPage * PAGE_SIZE
-    const to = from + PAGE_SIZE - 1
-
-    let query = supabase
-      .from('videos')
-      .select('*')
-      .eq('is_short', false)
-      .order('published_at', { ascending: false })
-      .range(from, to)
-
-    if (category !== 'all') {
-      query = query.eq('category', category)
-    }
-
-    const { data } = await query
-    const newVideos = (data ?? []) as Video[]
-
-    setVideos((prev) => nextPage === 0 ? newVideos : [...prev, ...newVideos])
-    setHasMore(newVideos.length === PAGE_SIZE)
+    const [videos, wIds] = await Promise.all([
+      getVideos(profileId),
+      profileId ? getWatchedIds(profileId) : Promise.resolve([]),
+    ])
+    setAllVideos(videos)
+    setWatchedIds(new Set(wIds))
+    setDisplayCount(PAGE_SIZE)
     setLoading(false)
   }, [])
 
-  // Reset when category changes
   useEffect(() => {
-    setPage(0)
-    fetchMore(0, cat)
-  }, [cat, fetchMore])
+    load(profile?.id)
+  }, [profile?.id, load])
 
-  // IntersectionObserver for infinite scroll
+  const { unwatched, watched } = useMemo(() => {
+    const base = cat === 'all' ? allVideos : allVideos.filter((v) => v.category === cat)
+    return {
+      unwatched: shuffle(base.filter((v) => !watchedIds.has(v.youtube_id))),
+      watched: shuffle(base.filter((v) => watchedIds.has(v.youtube_id))),
+    }
+  }, [allVideos, watchedIds, cat])
+
+  const total = unwatched.length + watched.length
+  const visibleUnwatched = unwatched.slice(0, Math.min(displayCount, unwatched.length))
+  const watchedStart = unwatched.length
+  const visibleWatched = displayCount > watchedStart
+    ? watched.slice(0, displayCount - watchedStart)
+    : []
+
   useEffect(() => {
     if (!sentinelRef.current) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          const next = page + 1
-          setPage(next)
-          fetchMore(next, cat)
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && displayCount < total) {
+          setDisplayCount((c) => c + PAGE_SIZE)
         }
       },
       { rootMargin: '200px' }
     )
-    observer.observe(sentinelRef.current)
-    return () => observer.disconnect()
-  }, [hasMore, loading, page, cat, fetchMore])
-
-  const isEmpty = !loading && filtered.length === 0
+    obs.observe(sentinelRef.current)
+    return () => obs.disconnect()
+  }, [displayCount, total])
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-4">
-      <CategoryBar value={cat} onChange={setCat} />
+      {/* Search bar */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (query.trim()) router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+        }}
+        className="relative mb-4"
+      >
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--ink-4)' }} />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => router.push('/search')}
+          placeholder="Search videos, topics…"
+          className="w-full pl-10 pr-4 rounded-full text-[14px] outline-none"
+          style={{ height: 44, background: 'var(--surface-2)', color: 'var(--ink)', border: '1.5px solid transparent' }}
+        />
+      </form>
 
-      {isEmpty ? (
+      <CategoryBar value={cat} onChange={(c) => { setCat(c); setDisplayCount(PAGE_SIZE) }} />
+
+      {loading ? (
+        <div className="flex justify-center py-24">
+          <Loader2 size={32} className="animate-spin" style={{ color: 'var(--ink-4)' }} />
+        </div>
+      ) : total === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
           <div className="text-5xl">📺</div>
           <h2 className="text-xl font-black text-ink">No videos yet</h2>
@@ -90,18 +115,32 @@ export default function HomeClient({ initialVideos }: Props) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-4">
-          {filtered.map((v) => (
-            <GridCard key={v.id} video={v} />
-          ))}
-        </div>
+        <>
+          {/* Unwatched grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mt-4">
+            {visibleUnwatched.map((v) => <GridCard key={v.id} video={v} />)}
+          </div>
+
+          {/* "You've seen these" divider + watched grid */}
+          {visibleWatched.length > 0 && (
+            <>
+              <div className="flex items-center gap-3 my-6">
+                <div className="flex-1 h-px" style={{ background: 'var(--line)' }} />
+                <span className="text-[12px] font-semibold text-ink-4 flex-shrink-0">You&apos;ve seen these</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--line)' }} />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                {visibleWatched.map((v) => <GridCard key={v.id} video={v} />)}
+              </div>
+            </>
+          )}
+        </>
       )}
 
-      {/* Sentinel + spinner */}
-      <div ref={sentinelRef} className="h-4" />
-      {loading && (
-        <div className="flex justify-center py-6">
-          <Loader2 size={24} className="animate-spin" style={{ color: 'var(--ink-4)' }} />
+      <div ref={sentinelRef} className="h-4 mt-4" />
+      {!loading && displayCount < total && (
+        <div className="flex justify-center py-4">
+          <Loader2 size={20} className="animate-spin" style={{ color: 'var(--ink-4)' }} />
         </div>
       )}
     </div>

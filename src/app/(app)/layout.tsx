@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useStore } from '@/lib/store'
-import TopNav from '@/components/nav/TopNav'
+import BottomNav from '@/components/nav/BottomNav'
 import ReminderToast from '@/components/screentime/ReminderToast'
 import LimitOverlay from '@/components/screentime/LimitOverlay'
 
@@ -20,10 +20,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!profile) return null
 
+  const isWatch = pathname.startsWith('/watch/')
+
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <TopNav />
-      <main>{children}</main>
+      <main className={isWatch ? undefined : 'pb-20'}>{children}</main>
+      {!isWatch && <BottomNav />}
       <ReminderToast />
       <LimitOverlay />
     </div>

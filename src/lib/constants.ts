@@ -1,13 +1,3 @@
-import type { Profile } from './types'
-
-export const PROFILES: Profile[] = [
-  { id: 'mom',  name: 'Sarah',  color: '#E7352C', emoji: '🌻', kids: false },
-  { id: 'dad',  name: 'Marcus', color: '#2D7DD2', emoji: '🎧', kids: false },
-  { id: 'kid1', name: 'Emma',   color: '#F4A338', emoji: '🦊', kids: true, age: 6 },
-  { id: 'kid2', name: 'Leo',    color: '#6BCB77', emoji: '🐸', kids: true, age: 9 },
-  { id: 'gran', name: 'Nana',   color: '#B088F9', emoji: '🌼', kids: false },
-]
-
 export const CATEGORIES = [
   { id: 'all',      label: 'All' },
   { id: 'cartoons', label: 'Cartoons' },

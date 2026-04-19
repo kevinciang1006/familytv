@@ -89,7 +89,7 @@ export default function LimitOverlay() {
           >
             See you tomorrow
           </button>
-          {!profile.kids ? (
+          {!profile.is_kids ? (
             <button
               onClick={add15}
               className="w-full py-3 rounded-xl font-bold text-[15px] text-ink border transition-colors hover:bg-surface-2"

@@ -1,24 +1,33 @@
 import { getSupabase } from './supabase'
 import type { Video, Channel } from './types'
 
-const PAGE_SIZE = 20
-
 // ─── Videos ──────────────────────────────────────────────────────────────────
 
-export async function getVideos(page = 0, pageSize = PAGE_SIZE): Promise<Video[]> {
+export async function getVideos(profileId?: string): Promise<Video[]> {
   const supabase = getSupabase()
   if (!supabase) return []
 
-  const from = page * pageSize
-  const to = from + pageSize - 1
+  let excludedChannelIds: string[] = []
+  if (profileId) {
+    const { data: excl } = await supabase
+      .from('profile_channel_exclusions')
+      .select('channel_id')
+      .eq('profile_id', profileId)
+    excludedChannelIds = (excl ?? []).map((r: { channel_id: string }) => r.channel_id)
+  }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('videos')
     .select('*')
     .eq('is_short', false)
     .order('published_at', { ascending: false })
-    .range(from, to)
+    .limit(500)
 
+  if (excludedChannelIds.length > 0) {
+    query = query.not('channel_id', 'in', `(${excludedChannelIds.join(',')})`)
+  }
+
+  const { data, error } = await query
   if (error) {
     console.error('getVideos error:', error)
     return []
@@ -92,10 +101,6 @@ export async function getChannels(): Promise<Channel[]> {
   if (error || !data) return []
   return data as Channel[]
 }
-
-// ─── Sync helpers for client-side pagination ──────────────────────────────────
-
-export { PAGE_SIZE }
 
 // ─── Sync client helper (used by ChannelsClient for video counts) ─────────────
 

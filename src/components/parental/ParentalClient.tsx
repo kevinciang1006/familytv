@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { PROFILES } from '@/lib/constants'
+import { useState, useEffect } from 'react'
+import { getProfiles } from '@/lib/profiles'
+import type { Profile } from '@/lib/types'
 
 function ToggleRow({ label, desc, value, onChange }: { label: string; desc: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -40,8 +41,11 @@ export default function ParentalClient() {
   const [safeSearch, setSafeSearch] = useState(true)
   const [requirePin, setRequirePin] = useState(true)
   const [pin, setPin] = useState(['', '', '', ''])
+  const [kids, setKids] = useState<Profile[]>([])
 
-  const kids = PROFILES.filter((p) => p.kids)
+  useEffect(() => {
+    getProfiles().then((all) => setKids(all.filter((p) => p.is_kids)))
+  }, [])
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-8">

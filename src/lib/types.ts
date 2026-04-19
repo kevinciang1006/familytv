@@ -34,10 +34,11 @@ export type Channel = {
 export type Profile = {
   id: string
   name: string
-  color: string
   emoji: string
-  kids: boolean
-  age?: number
+  color: string
+  is_kids: boolean
+  age: number | null
+  sort_order: number
 }
 
 export type Density = 'cozy' | 'compact'

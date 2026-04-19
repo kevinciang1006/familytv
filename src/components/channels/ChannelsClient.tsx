@@ -1,25 +1,24 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { Tv2 } from 'lucide-react'
 import type { Video, Channel } from '@/lib/types'
-import { useStore } from '@/lib/store'
 import { CATEGORIES } from '@/lib/constants'
 import { filterByChannel } from '@/lib/videos'
 
 type Props = { channels: Channel[]; videos: Video[] }
 
 export default function ChannelsClient({ channels, videos }: Props) {
-  const kidsMode = useStore((s) => s.kidsMode)
+  const router = useRouter()
   const [cat, setCat] = useState('all')
 
   const visible = useMemo(() => {
     return channels.filter((ch) => {
-      if (kidsMode && !ch.is_kids) return false
       if (cat !== 'all' && ch.category !== cat) return false
       return true
     })
-  }, [channels, kidsMode, cat])
+  }, [channels, cat])
 
   const usedCats = useMemo(() => {
     const ids = new Set(channels.map((ch) => ch.category))
@@ -63,8 +62,9 @@ export default function ChannelsClient({ channels, videos }: Props) {
             return (
               <div
                 key={ch.channel_id}
-                className="rounded-[var(--radius)] overflow-hidden flex flex-col"
+                className="rounded-[var(--radius)] overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
                 style={{ background: 'var(--surface)', border: '1.5px solid var(--line)' }}
+                onClick={() => router.push(`/channels/${ch.channel_id}`)}
               >
                 {/* Header */}
                 <div className="p-5 flex items-center gap-4">
