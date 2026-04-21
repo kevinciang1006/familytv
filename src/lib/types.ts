@@ -41,6 +41,21 @@ export type Profile = {
   sort_order: number
 }
 
+export type Show = {
+  id: string
+  slug: string
+  name: string
+  channel_id: string
+  thumbnail_url: string | null
+  sort_order: number
+  created_at: string
+  channels?: {
+    name: string
+    channel_id: string
+    sort_order: number
+  }
+}
+
 export type Density = 'cozy' | 'compact'
 export type CardStyle = 'landscape' | 'poster'
 export type Accent = 'red' | 'orange' | 'purple' | 'teal'

@@ -18,9 +18,16 @@ type Channel = {
   sort_order: number
 }
 
+type ShowRecord = {
+  id: string
+  name: string
+  slug: string
+}
+
 type VideoRow = {
   youtube_id: string
   channel_id: string
+  show_id: string | null
   title: string
   description: string | null
   thumbnail_url: string | null
@@ -72,9 +79,37 @@ function bestThumb(thumbnails: Record<string, { url: string }> | undefined): str
   )
 }
 
+// ─── Show matching ────────────────────────────────────────────────────────────
+
+function getShowKeywords(slug: string): string[] {
+  const map: Record<string, string[]> = {
+    'cory-carson':   ['cory carson', 'go! go! cory', 'cory'],
+    'trash-truck':   ['trash truck'],
+    'ms-rachel':     ['ms. rachel', 'ms rachel'],
+    'tom-and-jerry': ['tom and jerry', 'tom & jerry'],
+    'looney-tunes':  ['looney tunes', 'bugs bunny', 'daffy duck', 'tweety', 'yosemite sam', 'foghorn', 'road runner', 'wile e', 'tasmanian'],
+    'pixar-cars':    ['cars', 'lightning mcqueen', 'mater', 'pixar cars'],
+    'bluey':         ['bluey'],
+    'snoopy':        ['snoopy', 'peanuts', 'charlie brown'],
+    'veritasium':    ['veritasium'],
+    'kurzgesagt':    ['kurzgesagt'],
+  }
+  return map[slug] ?? []
+}
+
+function findShowId(title: string, channelShows: ShowRecord[]): string | null {
+  const lower = title.toLowerCase()
+  for (const show of channelShows) {
+    const keywords = getShowKeywords(show.slug)
+    if (keywords.some((k) => lower.includes(k))) return show.id
+  }
+  if (channelShows.length === 1) return channelShows[0].id
+  return null
+}
+
 // ─── YouTube fetch pipeline ───────────────────────────────────────────────────
 
-async function fetchChannelVideos(channel: Channel): Promise<VideoRow[]> {
+async function fetchChannelVideos(channel: Channel, channelShows: ShowRecord[]): Promise<VideoRow[]> {
   // Step 1 — get uploads playlist ID
   const chRes = await fetch(
     `${YT_BASE}/channels?part=contentDetails&id=${channel.channel_id}&key=${YOUTUBE_API_KEY}`
@@ -126,10 +161,12 @@ async function fetchChannelVideos(channel: Channel): Promise<VideoRow[]> {
   }): VideoRow => {
     const durationSec = parseISO8601Duration(item.contentDetails?.duration ?? '')
     const viewCount = parseInt(item.statistics?.viewCount ?? '0')
+    const title = item.snippet.title
     return {
       youtube_id: item.id,
       channel_id: channel.channel_id,
-      title: item.snippet.title,
+      show_id: findShowId(title, channelShows),
+      title,
       description: item.snippet.description?.slice(0, 500) ?? null,
       thumbnail_url: bestThumb(item.snippet.thumbnails),
       duration_seconds: durationSec,
@@ -167,7 +204,12 @@ Deno.serve(async () => {
 
   for (const channel of channels ?? []) {
     try {
-      const videos = await fetchChannelVideos(channel)
+      const { data: channelShows } = await supabase
+        .from('shows')
+        .select('id, name, slug')
+        .eq('channel_id', channel.channel_id)
+
+      const videos = await fetchChannelVideos(channel, channelShows ?? [])
       const { error } = await supabase.from('videos').upsert(videos, {
         onConflict: 'youtube_id',
         ignoreDuplicates: false,
